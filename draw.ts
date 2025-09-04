@@ -25,6 +25,9 @@ async function load() {
         _versionRange:any
     }> = []
 
+    let mod_user_info = new Map<string,string>()
+    let mod_dep_info = new Map<string, string>()
+
     /***** mod version compat merge ******/
     let modLatestVersion:Map<string,string> = new Map()
     let depratchedMods:Set<string> = new Set()
@@ -70,12 +73,15 @@ async function load() {
 
             qmod_item.mod_deps.forEach(dep => {
                 let other_echart_name = "0:" + dep.id + ":" + getDepVersion(dep.id, dep.versionRange, dep.version)
+                let edge_text = item.name + ">" + dep.id + ":" + dep.versionRange
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
-                    _versionRange:item.name + ">" + dep.id + ":" + dep.versionRange
+                    _versionRange:edge_text
                     // symbol: [undefined, 'arrow']
                 })
+                mod_user_info.set(other_echart_name, (mod_user_info.get(other_echart_name) ?? "") + edge_text + "<br>")
+                mod_dep_info.set(echart_name, (mod_dep_info.get(echart_name) ?? "") + edge_text + "<br>")
             })
         } else {
             let pkg_item = item as PackageNode
@@ -85,13 +91,15 @@ async function load() {
             })
             pkg_item.pkg_deps.forEach(dep => {
                 let other_echart_name = "1:" + dep.id + ":" + getDepVersion(dep.id, dep.versionRange, dep.version)
+                let edge_text = item.name + ">" + dep.id + ":" + dep.versionRange
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
-                    _versionRange:item.name + ">" + dep.id + ":" + dep.versionRange
+                    _versionRange:edge_text
                     // symbol: [undefined, 'arrow']
                 })
-
+                mod_user_info.set(other_echart_name, (mod_user_info.get(other_echart_name) ?? "") + edge_text + "<br>")
+                mod_dep_info.set(echart_name, (mod_dep_info.get(echart_name) ?? "") + edge_text + "<br>")
             })
         }
     }
@@ -230,7 +238,22 @@ async function load() {
                 edgeSymbol:['circle','arrow'],
                 tooltip:{
                     formatter:function(params:any, ticket:string, callback:any){
-                        
+                        let name = params?.data?.name
+                        if(name){
+                            let users = mod_user_info.get(name)
+                            let deps = mod_dep_info.get(name)
+                            let ret = ""
+                            if(users){
+                                ret += "used by:<br>" + users
+                            }
+                            if(deps){
+                                if(ret != "")
+                                    ret += "<hr>"
+                                ret += "depends on:<br>" + deps
+                            }
+                            if(ret != "")
+                                return ret
+                        }
                         return params?.data?._versionRange??""
                     }
                 }
