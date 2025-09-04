@@ -175,8 +175,8 @@ async function load() {
             // if(depth_count[depth] ?? 1 > 10){
                 let depth_percentage = ((depth_distance[depth] ?? 0) - 0.5) / (depth_count[depth] ?? 1)
                 let hori_depth:number = depth_distance[depth] ?? 0
-                dat.x = depth_percentage * 2000
-                dat.y = (depth + 2) * 200 + zline((depth_distance[depth] ?? 0)/4) * 200
+                dat.x = depth_percentage * 3000
+                dat.y = (depth + 2) * 200 + zline((depth_distance[depth] ?? 0)/4) * 260
             // }else{
             //     let depth_percentage = (depth_distance[depth] ?? 0) / (depth_count[depth] ?? 1)
             //     let hori_depth:number = depth_distance[depth] ?? 0
@@ -229,6 +229,13 @@ async function load() {
                 // min: 0.4,
                 // max: 2
                 // },
+                        emphasis: {
+          focus: 'adjacency',
+        //   lineStyle: {
+        //     width: 10
+        //   }
+        },
+
                 lineStyle: {
                     width:2,
                 color: 'source',
