@@ -18,13 +18,16 @@ async function load() {
     for (let mod of json) {
         let old = modLatestVersion.get(mod.item.id);
         if (old == undefined || old < mod.item.version) {
-            // if(old != undefined){
-            //     depratchedMods.add(mod.item.id + ":" + old)
-            // }
             modLatestVersion.set(mod.item.id, mod.item.version);
         }
-        //more offensive, remove every mod if it's not used by others or use others
-        depratchedMods.add(mod.item.id + ":" + mod.item.version);
+    }
+    for (let mod of json) {
+        let latest = modLatestVersion.get(mod.item.id);
+        if (latest) {
+            if (mod.item.version != latest) {
+                depratchedMods.add(mod.item.id + ":" + mod.item.version);
+            }
+        }
     }
     function getDepVersion(id, versionRange, version) {
         let latest = modLatestVersion.get(id);
@@ -86,10 +89,11 @@ async function load() {
         }
     }
     /**** remove depratched mods if nobody use it ****/
-    {
+    while (1) {
+        let changed = false;
         for (let link of links) {
             depratchedMods.delete(link.source.substring(2));
-            depratchedMods.delete(link.target.substring(2));
+            // depratchedMods.delete(link.target.substring(2))            
         }
         let copy_data = data;
         copy_data = [];
@@ -98,8 +102,21 @@ async function load() {
                 continue;
             copy_data.push(dat);
         }
+        changed ||= data.length != copy_data.length;
         data = copy_data;
-        console.log(depratchedMods);
+        let copy_links = links;
+        copy_links = [];
+        for (let link of links) {
+            if (depratchedMods.has(link.source.substring(2)))
+                continue;
+            if (depratchedMods.has(link.target.substring(2)))
+                continue;
+            copy_links.push(link);
+        }
+        changed ||= links.length != copy_links.length;
+        links = copy_links;
+        if (!changed)
+            break;
     }
     /***** update data position with depth ******/
     {
