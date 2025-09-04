@@ -1,0 +1,20 @@
+{
+  "name": "qmod_net",
+  "version": "1.0.0",
+  "main": "dist/compile.js",
+  "scripts": {
+    "build": "npx tsc",
+    "test": "npx tsc && node dist/compile.js"
+  },
+  "author": "frto027",
+  "license": "UNLICENSED",
+  "description": "TODO",
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  }
+}

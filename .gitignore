@@ -1,0 +1,5 @@
+.vscode
+dist/*
+!dist/draw.js
+node_modules
+
