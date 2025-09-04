@@ -14,6 +14,7 @@ async function load() {
 
     let data: Array<{
         name: string, x?: number, y?: number, value?: string, category?: string,
+        _author?:string,
         symbol?: string,
         symbolSize?: any
     }> = []
@@ -63,8 +64,9 @@ async function load() {
             let qmod_item = item as ModNode
             data.push({
                 name: echart_name,
+                _author: qmod_item.author,
                 // x:Math.random() * 2,y:Math.random() * 2,
-                value: item.name + "\n(" + item.version + ")",
+                value: item.name + "\n(" + item.version + ")" + " by " + qmod_item.author,
                 symbol: 'rect',
                 symbolSize: [150, 30],
                 // category: "qmod"
@@ -243,7 +245,12 @@ async function load() {
                             let users = mod_user_info.get(name)
                             let deps = mod_dep_info.get(name)
                             let ret = ""
+                            if(params?.data?._author){
+                                ret = "By " + params?.data?._author
+                            }
                             if(users){
+                                if(ret != "")
+                                    ret += "<hr>"
                                 ret += "used by:<br>" + users
                             }
                             if(deps){
@@ -253,6 +260,7 @@ async function load() {
                             }
                             if(ret != "")
                                 return ret
+                                
                         }
                         return params?.data?._versionRange??""
                     }
