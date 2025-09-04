@@ -21,8 +21,32 @@ async function load() {
         source: string,
         target: string,
         symbol?: any,
-        symbolSize?: any
+        symbolSize?: any,
+        _versionRange:any
     }> = []
+
+    /***** mod version compat merge ******/
+    let modLatestVersion:Map<string,string> = new Map()
+    let depratchedMods:Set<string> = new Set()
+    for(let mod of json){
+        let old = modLatestVersion.get(mod.item.id)
+        if(old == undefined || old < mod.item.version){
+            // if(old != undefined){
+            //     depratchedMods.add(mod.item.id + ":" + old)
+            // }
+            modLatestVersion.set(mod.item.id, mod.item.version)
+        }
+        //more offensive, remove every mod if it's not used by others or use others
+        depratchedMods.add(mod.item.id + ":" + mod.item.version)
+    }
+    function getDepVersion(id:string, versionRange:string, version:string){
+        let latest = modLatestVersion.get(id)
+        if(latest == undefined)
+            return version
+        if(versionRange[0] == '^')
+            return latest
+        return version
+    }
 
     /***** feed the data *******/
     let x_incr = 20
@@ -45,10 +69,11 @@ async function load() {
             x_incr += 30
 
             qmod_item.mod_deps.forEach(dep => {
-                let other_echart_name = "0:" + dep.id + ":" + dep.version
+                let other_echart_name = "0:" + dep.id + ":" + getDepVersion(dep.id, dep.versionRange, dep.version)
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
+                    _versionRange:item.name + ">" + dep.id + ":" + dep.versionRange
                     // symbol: [undefined, 'arrow']
                 })
             })
@@ -59,15 +84,33 @@ async function load() {
                 value: item.name + "\n(" + item.version + ")",
             })
             pkg_item.pkg_deps.forEach(dep => {
-                let other_echart_name = "1:" + dep.id + ":" + dep.version
+                let other_echart_name = "1:" + dep.id + ":" + getDepVersion(dep.id, dep.versionRange, dep.version)
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
+                    _versionRange:item.name + ">" + dep.id + ":" + dep.versionRange
                     // symbol: [undefined, 'arrow']
                 })
 
             })
         }
+    }
+
+    /**** remove depratched mods if nobody use it ****/
+    {
+        for(let link of links){
+            depratchedMods.delete(link.source.substring(2))
+            depratchedMods.delete(link.target.substring(2))            
+        }
+        let copy_data = data
+        copy_data = []
+        for(let dat of data){
+            if(depratchedMods.has(dat.name.substring(2)))
+                continue
+            copy_data.push(dat)
+        }
+        data = copy_data
+        console.log(depratchedMods)
     }
 
     /***** update data position with depth ******/
@@ -184,7 +227,13 @@ async function load() {
                 itemStyle:{
                     color:'gray'
                 },
-                edgeSymbol:['circle','arrow']
+                edgeSymbol:['circle','arrow'],
+                tooltip:{
+                    formatter:function(params:any, ticket:string, callback:any){
+                        
+                        return params?.data?._versionRange??""
+                    }
+                }
             }
         ]
     };
