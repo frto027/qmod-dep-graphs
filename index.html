@@ -3,8 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <script src="echarts.js"></script>
-    <h2>Beatsaber Quest Mod Dependency for 1.40.8 (snapshot at 20250904, only latest mod)</h2>
-    <div id="main" style="width: 1920px;height:1080px;"></div>
+    <h2>Beatsaber Quest Mod Dependency</h2>
+
+    <input type="checkbox" class="chart-conf" id="showVersionInIcon" checked><label for="showVersionInIcon">Show Version</label>
+    <input type="checkbox" class="chart-conf" id="showAuthorInIcon"><label for="showAuthorInIcon">Show Author</label>
+    <input type="checkbox" class="chart-conf" id="showDeps"><label for="showDeps">Show dependency in float menu</label>
+    <input type="checkbox" class="chart-conf" id="showUsedBy"><label for="showUsedBy">Show used by in fload menu</label>
+    <input type="checkbox" class="chart-conf" id="filterVersions" checked><label for="filterVersions">Filter versions</label>
+
+    <br>
+    <select id="data-collection">
+      <option value="database/latest_db.json">1.40.8 snapshot at 20250904, only latest mod</option>
+      <option value="database/db.json">1.40.8 snapshot at 20250904, full mod</option>
+    </select>
+    <br>
+
+    <div id="main" style="width: 1200px;height:1200px;"></div>
     <script>exports = {}</script>
     <script src="dist/draw.js"></script>
   </head>

@@ -1,56 +1,65 @@
 import { DBItem } from "./database";
 import { ModNode, PackageNode } from "./mod_interface";
 
-function zline(x:number){
+function zline(x: number) {
     return (x % 2) - 1
 }
 
-var echarts: any
-async function load() {
-    let json: Array<DBItem> = await (await fetch("database/latest_db.json")).json() as Array<DBItem>
+interface EchartData {
+    name: string, x?: number, y?: number, value?: string, category?: string,
+    _author?: string,
+    _hint: string
+}
+interface EchartLink {
+    source: string,
+    target: string,
+    _hint: string
+}
 
-    var chartDom = document.getElementById("main")
-    var myChart = echarts.init(chartDom, null, {renderer: 'svg' })
+interface DataConfig{
+    showVersionInIcon?:boolean
+    showAuthorInIcon?:boolean
+    showDeps?:boolean
+    showUsedBy?:boolean
 
-    let data: Array<{
-        name: string, x?: number, y?: number, value?: string, category?: string,
-        _author?:string,
-        symbol?: string,
-        symbolSize?: any
-    }> = []
-    let links: Array<{
-        source: string,
-        target: string,
-        symbol?: any,
-        symbolSize?: any,
-        _versionRange:any
-    }> = []
+    filterVersions?:boolean
+}
 
-    let mod_user_info = new Map<string,string>()
+function makeData(json: Array<DBItem>, config:DataConfig) {
+    let data: Array<EchartData> = []
+    let links: Array<EchartLink> = []
+
+    let mod_user_info = new Map<string, string>()
     let mod_dep_info = new Map<string, string>()
 
+    const need_filter_versions = config.filterVersions ?? true
     /***** mod version compat merge ******/
-    let modLatestVersion:Map<string,string> = new Map()
-    let depratchedMods:Set<string> = new Set()
-    for(let mod of json){
+    let modLatestVersion: Map<string, string> = new Map()
+    let depratchedMods: Set<string> = new Set()
+    for (let mod of json) {
         let old = modLatestVersion.get(mod.item.id)
-        if(old == undefined || old < mod.item.version){
+        if (old == undefined || old < mod.item.version) {
             modLatestVersion.set(mod.item.id, mod.item.version)
         }
     }
-    for(let mod of json){
-        let latest = modLatestVersion.get(mod.item.id)
-        if(latest){
-            if(mod.item.version != latest){
-                depratchedMods.add(mod.item.id + ":" + mod.item.version)
+    if(need_filter_versions){
+        for (let mod of json) {
+            let latest = modLatestVersion.get(mod.item.id)
+            if (latest) {
+                if (mod.item.version != latest) {
+                    depratchedMods.add(mod.item.id + ":" + mod.item.version)
+                }
             }
         }
+
     }
-    function getDepVersion(id:string, versionRange:string, version:string){
-        let latest = modLatestVersion.get(id)
-        if(latest == undefined)
+    function getDepVersion(id: string, versionRange: string, version: string) {
+        if(!need_filter_versions)
             return version
-        if(versionRange[0] == '^')
+        let latest = modLatestVersion.get(id)
+        if (latest == undefined)
+            return version
+        if (versionRange[0] == '^')
             return latest
         return version
     }
@@ -69,10 +78,12 @@ async function load() {
                 name: echart_name,
                 _author: qmod_item.author,
                 // x:Math.random() * 2,y:Math.random() * 2,
-                value: item.name + "\n(" + item.version + ")" + " by " + qmod_item.author,
-                symbol: 'rect',
-                symbolSize: [150, 30],
+                category: qmod_item.author,
+                value: item.name + 
+                    (config.showVersionInIcon ? "(" + item.version + ")" : "") + 
+                    (config.showAuthorInIcon ? "\nby " + qmod_item.author : ""),
                 // category: "qmod"
+                _hint: ""
             })
             x_incr += 30
 
@@ -82,7 +93,7 @@ async function load() {
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
-                    _versionRange:edge_text
+                    _hint: edge_text
                     // symbol: [undefined, 'arrow']
                 })
                 mod_user_info.set(other_echart_name, (mod_user_info.get(other_echart_name) ?? "") + edge_text + "<br>")
@@ -93,6 +104,7 @@ async function load() {
             data.push({
                 name: echart_name,
                 value: item.name + "\n(" + item.version + ")",
+                _hint: ""
             })
             pkg_item.pkg_deps.forEach(dep => {
                 let other_echart_name = "1:" + dep.id + ":" + getDepVersion(dep.id, dep.versionRange, dep.version)
@@ -100,7 +112,7 @@ async function load() {
                 links.push({
                     source: other_echart_name,
                     target: echart_name,
-                    _versionRange:edge_text
+                    _hint: edge_text
                     // symbol: [undefined, 'arrow']
                 })
                 mod_user_info.set(other_echart_name, (mod_user_info.get(other_echart_name) ?? "") + edge_text + "<br>")
@@ -110,16 +122,16 @@ async function load() {
     }
 
     /**** remove depratched mods if nobody use it ****/
-    while(1){
+    while (need_filter_versions) {
         let changed = false
-        for(let link of links){
+        for (let link of links) {
             depratchedMods.delete(link.source.substring(2))
             // depratchedMods.delete(link.target.substring(2))            
         }
         let copy_data = data
         copy_data = []
-        for(let dat of data){
-            if(depratchedMods.has(dat.name.substring(2)))
+        for (let dat of data) {
+            if (depratchedMods.has(dat.name.substring(2)))
                 continue
             copy_data.push(dat)
         }
@@ -128,73 +140,73 @@ async function load() {
 
         let copy_links = links
         copy_links = []
-        for(let link of links){
-            if(depratchedMods.has(link.source.substring(2)))
+        for (let link of links) {
+            if (depratchedMods.has(link.source.substring(2)))
                 continue
-            if(depratchedMods.has(link.target.substring(2)))
+            if (depratchedMods.has(link.target.substring(2)))
                 continue
             copy_links.push(link)
         }
         changed ||= links.length != copy_links.length
         links = copy_links
-        if(!changed)
+        if (!changed)
             break
     }
 
     /***** update data position with depth ******/
     {
-        let dataMaps:Map<string, any> = new Map()
-        for(let dat of data){
-            dataMaps.set(dat.name,dat)
+        let dataMaps: Map<string, any> = new Map()
+        for (let dat of data) {
+            dataMaps.set(dat.name, dat)
         }
 
-        let linkMaps:Map<string,Set<string> > = new Map()
-        for(let link of links){
-            if(!linkMaps.has(link.source))
+        let linkMaps: Map<string, Set<string>> = new Map()
+        for (let link of links) {
+            if (!linkMaps.has(link.source))
                 linkMaps.set(link.source, new Set())
             linkMaps.get(link.source)?.add(link.target)
         }
 
-        function update_depth(data:any){
-            if(data.touched)
+        function update_depth(data: any) {
+            if (data.touched)
                 return
             data.touched = true
             let targets = linkMaps.get(data.name)
             let depth = 0
-            if(!targets){
+            if (!targets) {
                 data.depth = -1
                 return
             }
-            for(let target of targets){
+            for (let target of targets) {
                 update_depth(dataMaps.get(target))
                 depth = Math.max(dataMaps.get(target)?._depth ?? 0, depth)
             }
             data._depth = depth + 1
         }
 
-        for(let dat of data){
+        for (let dat of data) {
             update_depth(dat)
         }
 
-        let depth_distance:Array<number> = []
-        let depth_count:Array<number> = []
-        for(let dat of data){
+        let depth_distance: Array<number> = []
+        let depth_count: Array<number> = []
+        for (let dat of data) {
             let depth = (dat as any)._depth
-            if(depth == undefined)
+            if (depth == undefined)
                 depth = -1
             depth_count[depth] = (depth_count[depth] ?? 0) + 1
         }
-        for(let dat of data){
+        for (let dat of data) {
             let depth = (dat as any)._depth
-            if(depth == undefined)
+            if (depth == undefined)
                 depth = -1
             depth_distance[depth] = (depth_distance[depth] ?? 0) + 1
 
             // if(depth_count[depth] ?? 1 > 10){
-                let depth_percentage = ((depth_distance[depth] ?? 0) - 0.5) / (depth_count[depth] ?? 1)
-                let hori_depth:number = depth_distance[depth] ?? 0
-                dat.x = depth_percentage * 3000
-                dat.y = (depth + 2) * 200 + zline((depth_distance[depth] ?? 0)/4) * 260
+            let depth_percentage = ((depth_distance[depth] ?? 0) - 0.5) / (depth_count[depth] ?? 1)
+            let hori_depth: number = depth_distance[depth] ?? 0
+            dat.x = depth_percentage * 3000
+            dat.y = (depth + 2) * 300 + zline((depth_distance[depth] ?? 0) / 4) * 260
             // }else{
             //     let depth_percentage = (depth_distance[depth] ?? 0) / (depth_count[depth] ?? 1)
             //     let hori_depth:number = depth_distance[depth] ?? 0
@@ -204,90 +216,125 @@ async function load() {
             // }
         }
     }
+
+    /********** add hint text to nodes *********/
+    {
+        for (let dat of data) {
+            let name = dat.name
+            let users = mod_user_info.get(name)
+            let deps = mod_dep_info.get(name)
+            let ret = ""
+            if (dat._author) {
+                ret = "By " + dat._author
+            }
+            if (users && (config.showUsedBy ?? false)) {
+                if (ret != "")
+                    ret += "<hr>"
+                ret += "used by:<br>" + users
+            }
+            if (deps && (config.showDeps ?? false)) {
+                if (ret != "")
+                    ret += "<hr>"
+                ret += "depends on:<br>" + deps
+            }
+            if (ret != "")
+                dat._hint = ret
+        }
+    }
+
+    let category: Array<any> = []
+    {
+        let authors: Set<string> = new Set()
+        for (let dat of data) {
+            authors.add(dat._author ?? "")
+            // dat.category = dat._author ?? ""
+        }
+        authors.delete("")
+        for (let auth of authors)
+            category.push({
+                name: auth
+            })
+    }
+
+    return { data, links, category }
+}
+
+var echarts: any
+
+var chartDom = document.getElementById("main")
+var myChart = echarts.init(chartDom, null, { renderer: 'svg' })
+
+{
+    let cbs = document.getElementsByClassName("chart-conf")
+    for(let i=0;i<cbs.length;i++){
+        (cbs[i] as HTMLInputElement).onchange = ()=>load()
+    }
+
+}
+
+{
+    (document.getElementById("data-collection") as HTMLInputElement).onchange = ()=> load()
+}
+
+async function load() {
+
+    let json_url = (document.getElementById("data-collection") as HTMLInputElement).value ?? "database/latest_db.json"
+
+    let json: Array<DBItem> = await (await fetch(json_url)).json() as Array<DBItem>
+
+    let config:any = {}
+    let cbs = document.getElementsByClassName("chart-conf")
+    for(let i=0;i<cbs.length;i++){
+        config[cbs[i]?.id ?? ""] = (cbs[i] as HTMLInputElement).checked
+    }
+
+    const { data, links, category } = makeData(json, config)
     /**** done ****/
     var option = {
         tooltip: {},
-        // dataZoom:{
-        //     type:'inside'
-        // },
-        // legend: [
-        //     {
-        //         // data: ["qmod","package"]
-        //     }
-        // ],
+        legend: [
+            {
+                data:category.map(d=>d.name),
+                            selector:true
+
+            },
+        ],
         series: [
             {
                 name: 'qmod relationships',
                 type: 'graph',
                 data: data,
                 links: links,
-                // zoom:0.4,
-                // coordinateSystem:'cartesian2d',
-                coordinateSysmteUsage:'box',
-                layout: "none",
-                // force: {
-                //     // initLayout:"circular",
-                //     // repulsion: 1,
-                //     edgeLength: 10
-                // },
                 draggable: true,
-                // roam: true,
+                categories: category,
                 label: {
                     show: true,
                     color: 'black',
-                    // backgroundColor:'gray',
+                    fontSize:8,
                     formatter: function (v: any) {
                         return v.data.value
                     }
                 },
-                // labelLayout: {
-                // hideOverlap: true
-                // },
-                // scaleLimit: {
-                // min: 0.4,
-                // max: 2
-                // },
-                        emphasis: {
-          focus: 'adjacency',
-        //   lineStyle: {
-        //     width: 10
-        //   }
-        },
+                scaleLimit: {
+                    min: 0.4,
+                    max: 2
+                },
+
+                emphasis: {
+                    focus: 'adjacency',
+                },
 
                 lineStyle: {
-                    width:2,
-                color: 'source',
-                curveness: 0.3
+                    width: 2,
+                    color: 'source',
+                    curveness: 0.3
                 },
-                itemStyle:{
-                    color:'gray'
-                },
-                edgeSymbol:['circle','arrow'],
-                tooltip:{
-                    formatter:function(params:any, ticket:string, callback:any){
-                        let name = params?.data?.name
-                        if(name){
-                            let users = mod_user_info.get(name)
-                            let deps = mod_dep_info.get(name)
-                            let ret = ""
-                            if(params?.data?._author){
-                                ret = "By " + params?.data?._author
-                            }
-                            if(users){
-                                if(ret != "")
-                                    ret += "<hr>"
-                                ret += "used by:<br>" + users
-                            }
-                            if(deps){
-                                if(ret != "")
-                                    ret += "<hr>"
-                                ret += "depends on:<br>" + deps
-                            }
-                            if(ret != "")
-                                return ret
-                                
-                        }
-                        return params?.data?._versionRange??""
+                symbol: 'rect',
+                symbolSize: [150, 20],
+                edgeSymbol: ['circle', 'arrow'],
+                tooltip: {
+                    formatter: function (params: any, ticket: string, callback: any) {
+                        return params?.data?._hint ?? ""
                     }
                 }
             }
