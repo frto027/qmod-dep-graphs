@@ -80,7 +80,7 @@ async function main() {
         }
 
         let version_db = new Database(json_path, db, true)
-        manifest.jsonnames.push('${version}_latest_mods.json')
+        manifest.jsonnames.push(json_filename)
         let depHandler = new DepHandler(version_db)
         async function handleMods(objs:any){
             for(let obj of objs){
