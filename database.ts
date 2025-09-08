@@ -17,10 +17,10 @@ export class Database {
     items: Array<DBItem>
 
     mirror?: Database
-    constructor(path: string, mirror: Database | undefined = undefined) {
+    constructor(path: string, mirror: Database | undefined = undefined, dontload:boolean = false) {
         this.path = path
         this.items = []
-        if (fs.existsSync(path)) {
+        if (fs.existsSync(path) && !dontload) {
             this.items = JSON.parse(fs.readFileSync(path).toString("utf8"))
         }
 

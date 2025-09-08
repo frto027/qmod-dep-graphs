@@ -13,10 +13,28 @@
 
     <br>
     <select id="data-collection">
-      <option value="database/latest_db.json">1.40.8 snapshot at 20250904, only latest mod</option>
-      <option value="database/db.json">1.40.8 snapshot at 20250904, full mod</option>
+      <!-- <option value="database/latest_db.json">1.40.8 snapshot at 20250904, only latest mod</option>
+      <option value="database/db.json">1.40.8 snapshot at 20250904, full mod</option> -->
     </select>
     <br>
+
+    <div>database timestamp: <span id="ldsp">loading...</span></div>
+
+    <script>
+      async function downloadManifest(){
+        let manifest = await fetch('database/manifest.json')
+        let mjson = await manifest.json()
+        document.getElementById("ldsp").innerText = (new Date(mjson.timestamp)).toString()
+        let sel = document.getElementById('data-collection')
+        for(let name of mjson.jsonnames){
+          let opt = document.createElement("option")
+          opt.value = 'database/' + name
+          opt.innerText = name
+          sel.appendChild(opt)
+        }
+      }
+      downloadManifest()
+    </script>
 
     <div id="main" style="width: 1200px;height:1200px;"></div>
     <script>exports = {}</script>

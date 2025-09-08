@@ -278,7 +278,7 @@ var myChart = echarts.init(chartDom, null, { renderer: 'svg' })
 
 async function load() {
 
-    let json_url = (document.getElementById("data-collection") as HTMLInputElement).value ?? "database/latest_db.json"
+    let json_url = (document.getElementById("data-collection") as HTMLInputElement).value ?? "database/1.37.0_9064817954_latest_mods.json"
 
     let json: Array<DBItem> = await (await fetch(json_url)).json() as Array<DBItem>
 

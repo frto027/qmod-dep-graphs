@@ -1,5 +1,7 @@
+import { writeFileSync } from "fs"
 import { Database } from "./database"
 import { MNode, ModNode, NodeType, PackageNode } from "./mod_interface"
+import { versions } from "./version_config"
 
 abstract class Handler{
     db:Database
@@ -47,36 +49,42 @@ function getLatestMods(mods:any){
     return ret
 }
 
+interface Manifest{
+    timestamp:number
+    jsonnames:string[]
+}
+
 async function main() {
-    let db = new Database("database/db.json")
-    let latest_db = new Database("database/latest_db.json", db)
+    let db = new Database("database/total.json")
 
     let modjson = await (await fetch("https://mods.bsquest.xyz/mods.json")).json()
     // console.log(modjson)
 
-    let depHandler = new DepHandler(latest_db)
-
-    async function handleMods(objs:any){
-        for(let obj of objs){
-            let url = obj.download
-            if(url && url.endsWith(".qmod")){
-                await depHandler.handle(await latest_db.get(url))
-            }
-        }
+    let manifest:Manifest = {
+        timestamp: +new Date(),
+        jsonnames: [
+            'total.json', //what what...?
+        ]
     }
 
-    let mods = modjson["1.40.8_7379"]
-    await handleMods(getLatestMods(mods))
-
-    // let r = await db.get("https://github.com/frto027/HeartBeatLanClientBSQuest/releases/download/v0.3.5/HeartBeatQuest.1_40_8.qmod")
-
-
-    // await depHandler.handle(r)
-
-
-
-    db.save()
-    latest_db.save()
+    for(let version of versions){
+        let version_db = new Database(`database/${version}_latest_mods.json`, db, true)
+        manifest.jsonnames.push('${version}_latest_mods.json')
+        let depHandler = new DepHandler(version_db)
+        async function handleMods(objs:any){
+            for(let obj of objs){
+                let url = obj.download
+                if(url && url.endsWith(".qmod")){
+                    await depHandler.handle(await version_db.get(url))
+                }
+            }
+        }
+        let mods = modjson[version]
+        await handleMods(getLatestMods(mods))
+        version_db.save()
+        db.save()
+    }
+    writeFileSync('database/manifest.json', JSON.stringify(manifest))
 }
 
 main()
