@@ -24,7 +24,7 @@ jobs:
         git config --local user.name "frto027-github-actions[bot]"
         git add .
         ls database
-        git commit -a -m "Auto db update" && echo done
+        git commit -a -m "Auto db update" || true
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
