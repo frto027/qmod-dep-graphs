@@ -61,7 +61,6 @@ async function main() {
     let manifest:Manifest = {
         timestamp: +new Date(),
         jsonnames: [
-            'total.json', //what what...?
         ]
     }
 
