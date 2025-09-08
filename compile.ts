@@ -55,8 +55,6 @@ interface Manifest{
 }
 
 async function main() {
-    let db = new Database("database/total.json")
-
     let modjson = await (await fetch("https://mods.bsquest.xyz/mods.json")).json()
     // console.log(modjson)
 
@@ -79,7 +77,7 @@ async function main() {
             old_things = readFileSync(json_path).toString("utf-8")
         }
 
-        let version_db = new Database(json_path, db, true)
+        let version_db = new Database(json_path, true)
         manifest.jsonnames.push(json_filename)
         let depHandler = new DepHandler(version_db)
         async function handleMods(objs:any){
@@ -93,7 +91,6 @@ async function main() {
         let mods = modjson[version]
         await handleMods(getLatestMods(mods))
         version_db.save()
-        db.save()
 
         if(readFileSync(json_path).toString("utf-8") != old_things){
             anything_changed = true
