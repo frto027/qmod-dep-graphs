@@ -76,7 +76,7 @@ async function main() {
             old_things = readFileSync(json_path).toString("utf-8")
         }
 
-        let version_db = new Database(json_path, true)
+        let version_db = new Database(json_path, false)
         manifest.jsonnames.push(json_filename)
         let depHandler = new DepHandler(version_db)
         async function handleMods(objs:any){

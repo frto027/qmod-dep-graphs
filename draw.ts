@@ -29,6 +29,9 @@ function makeData(json: Array<DBItem>, config:DataConfig) {
     let data: Array<EchartData> = []
     let links: Array<EchartLink> = []
 
+    let data_ids:Set<string> = new Set()
+
+
     let mod_user_info = new Map<string, string>()
     let mod_dep_info = new Map<string, string>()
 
@@ -69,7 +72,10 @@ function makeData(json: Array<DBItem>, config:DataConfig) {
     for (let node of json) {
         let item = node.item
         let echart_name = item.type + ":" + item.id + ":" + item.version
-
+        if(data_ids.has(echart_name))
+            continue
+        else
+            data_ids.add(echart_name)
 
         if (item.type == 0) {
             //qmod
@@ -279,7 +285,10 @@ var myChart = echarts.init(chartDom, null, { renderer: 'svg' })
 async function load() {
 
     let json_url = (document.getElementById("data-collection") as HTMLInputElement).value ?? "database/1.37.0_9064817954_latest_mods.json"
-
+    if(json_url == ""){
+        myChart.clear()
+        return
+    }
     let json: Array<DBItem> = await (await fetch(json_url)).json() as Array<DBItem>
 
     let config:any = {}

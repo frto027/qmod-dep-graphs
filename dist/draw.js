@@ -6,6 +6,7 @@ function zline(x) {
 function makeData(json, config) {
     let data = [];
     let links = [];
+    let data_ids = new Set();
     let mod_user_info = new Map();
     let mod_dep_info = new Map();
     const need_filter_versions = config.filterVersions ?? true;
@@ -43,6 +44,10 @@ function makeData(json, config) {
     for (let node of json) {
         let item = node.item;
         let echart_name = item.type + ":" + item.id + ":" + item.version;
+        if (data_ids.has(echart_name))
+            continue;
+        else
+            data_ids.add(echart_name);
         if (item.type == 0) {
             //qmod
             let qmod_item = item;
@@ -232,6 +237,10 @@ var myChart = echarts.init(chartDom, null, { renderer: 'svg' });
 }
 async function load() {
     let json_url = document.getElementById("data-collection").value ?? "database/1.37.0_9064817954_latest_mods.json";
+    if (json_url == "") {
+        myChart.clear();
+        return;
+    }
     let json = await (await fetch(json_url)).json();
     let config = {};
     let cbs = document.getElementsByClassName("chart-conf");
