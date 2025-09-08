@@ -1,4 +1,4 @@
-import { writeFileSync } from "fs"
+import { existsSync, readFileSync, writeFileSync } from "fs"
 import { Database } from "./database"
 import { MNode, ModNode, NodeType, PackageNode } from "./mod_interface"
 import { versions } from "./version_config"
@@ -67,8 +67,19 @@ async function main() {
         ]
     }
 
+    let anything_changed = false
+
     for(let version of versions){
-        let version_db = new Database(`database/${version}_latest_mods.json`, db, true)
+        let old_things = ""
+        
+        let json_filename = `${version}_latest_mods.json`
+        let json_path = "database/" + json_filename
+
+        if(existsSync(json_path)){
+            old_things = readFileSync(json_path).toString("utf-8")
+        }
+
+        let version_db = new Database(json_path, db, true)
         manifest.jsonnames.push('${version}_latest_mods.json')
         let depHandler = new DepHandler(version_db)
         async function handleMods(objs:any){
@@ -83,8 +94,14 @@ async function main() {
         await handleMods(getLatestMods(mods))
         version_db.save()
         db.save()
+
+        if(readFileSync(json_path).toString("utf-8") != old_things){
+            anything_changed = true
+        }
     }
-    writeFileSync('database/manifest.json', JSON.stringify(manifest))
+
+    if(anything_changed)
+        writeFileSync('database/manifest.json', JSON.stringify(manifest))
 }
 
 main()
