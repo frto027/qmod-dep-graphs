@@ -18,11 +18,11 @@ jobs:
         npm run update
     - name: Commit files
       run: |
-        git config --local user.email "q602706150@gmail.com"
+        git config --local user.email "frto027-github-actions[bot]@users.noreply.github.com"
         git config --local user.name "frto027-github-actions[bot]"
         git add .
         ls database
-        git commit -a -m "Update database"
+        git commit -a -m "Auto db update"
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
