@@ -231,7 +231,7 @@ var myChart = echarts.init(chartDom, null, { renderer: 'svg' });
     document.getElementById("data-collection").onchange = () => load();
 }
 async function load() {
-    let json_url = document.getElementById("data-collection").value ?? "database/latest_db.json";
+    let json_url = document.getElementById("data-collection").value ?? "database/1.37.0_9064817954_latest_mods.json";
     let json = await (await fetch(json_url)).json();
     let config = {};
     let cbs = document.getElementsByClassName("chart-conf");
