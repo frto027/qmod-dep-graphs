@@ -3,3 +3,7 @@ export const versions = [
     "1.40.8_7379",
     "1.37.0_9064817954",
 ]
+
+export const pc_versions = [
+    "1.40.8"
+]
